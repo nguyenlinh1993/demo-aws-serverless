@@ -1,0 +1,8 @@
+### api - hello
+POST https://3qdrlpxnx6.execute-api.ap-southeast-1.amazonaws.com/hello
+Content-Type: application/json
+
+{
+  "id": "1",
+  "message": "Hello SAM + Java 17 (2)"
+}

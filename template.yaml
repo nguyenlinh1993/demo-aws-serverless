@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Demo AWS Serverless Java 17 - API + DynamoDB + S3 Event (FIXED)
+
+Globals:
+  Function:
+    Runtime: java17
+    Timeout: 10
+    MemorySize: 512
+
+Resources:
+
+  ###################################
+  # DynamoDB
+  ###################################
+  HelloTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: demo-hello-table
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  ###################################
+  # Lambda 1: API → DynamoDB
+  ###################################
+  HelloApiFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: java17
+    Properties:
+      FunctionName: demo-hello-api
+      Handler: com.lucas.demoawsserverless.HelloApiHandler::handleRequest
+      CodeUri: .
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref HelloTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref HelloTable
+      Events:
+        HelloApi:
+          Type: HttpApi
+          Properties:
+            Path: /hello
+            Method: POST
+
+  ###################################
+  # Lambda 2: S3 Event Handler
+  ###################################
+  S3EventFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: java17
+    Properties:
+      FunctionName: demo-s3-event
+      Handler: com.lucas.demoawsserverless.S3EventHandler::handleRequest
+      CodeUri: .
+
+  ###################################
+  # Permission: S3 → Lambda
+  ###################################
+  S3InvokePermission:
+    Type: AWS::Lambda::Permission
+    DependsOn: S3EventFunction
+    Properties:
+      FunctionName: !Ref S3EventFunction
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+
+  ###################################
+  # S3 Bucket (create LAST)
+  ###################################
+  UploadBucket:
+    Type: AWS::S3::Bucket
+    DependsOn: S3InvokePermission
+    Properties:
+      BucketName: !Sub demo-upload-bucket-${AWS::AccountId}
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Function: !GetAtt S3EventFunction.Arn
+
+Outputs:
+  ApiUrl:
+    Description: HTTP API endpoint
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/hello"
+
+  UploadBucketName:
+    Description: S3 bucket for upload
+    Value: !Ref UploadBucket
