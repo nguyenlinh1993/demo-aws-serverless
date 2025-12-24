@@ -2,42 +2,17 @@ name: Deploy AWS SAM Stack
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - master
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
-    env:
-      AWS_REGION: ${{ secrets.AWS_REGION }}
 
     steps:
-      - name: Checkout source
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Java 17 (Amazon Corretto) + Maven
-        uses: actions/setup-java@v4
-        with:
-          distribution: corretto
-          java-version: '17'
-          cache: maven
-
-      - name: Setup AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Setup AWS SAM CLI
-        uses: aws-actions/setup-sam@v2
-
-      - name: Build SAM
-        run: sam build
-
-      - name: Deploy SAM
-        run: |
-          sam deploy \
-            --stack-name demo-aws-serverless \
-            --region $AWS_REGION \
-            --capabilities CAPABILITY_IAM \
-            --no-confirm-changeset \
-            --no-fail-on-empty-changeset
+      - name: Run test command
+        run: echo "Test project"
