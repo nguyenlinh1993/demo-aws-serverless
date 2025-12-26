@@ -18,7 +18,8 @@ public class HelloApiHandler
 
     @Override
     public Map<String, Object> handleRequest(Map<String, Object> input, Context context) {
-        if ("true".equalsIgnoreCase(String.valueOf(input.get("forceError")))) {
+        String body = (String) input.get("body");
+        if (body != null && body.contains("\"forceError\"")) {
             context.getLogger().log("Forced error for demo purpose");
             throw new RuntimeException("FORCED_ERROR_DEMO");
         }
