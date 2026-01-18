@@ -22,7 +22,6 @@ jobs:
 
       - name: Build Lambda
         run: |
-          cd lambda
           mvn clean package -DskipTests
 
       - name: Setup NodeJS
